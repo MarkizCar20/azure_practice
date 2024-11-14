@@ -36,3 +36,4 @@ override.tf.json
 .terraformrc
 terraform.rc
 clientId.json
+terraform-custom-role.json
