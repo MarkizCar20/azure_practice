@@ -27,6 +27,7 @@ resource "azurerm_network_security_rule" "allow_http" {
   destination_port_range = "80"
   source_address_prefix = "*"
   destination_address_prefix = "*"
+  source_port_range = "*"
   network_security_group_name = azurerm_network_security_group.nsg.name
   resource_group_name = var.resource_group_name
 }

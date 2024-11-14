@@ -4,6 +4,7 @@ output "vnet_id" {
 
 output "subnet_id" {
   value = azurerm_subnet.subnet.id
+  description = "The ID of the subnet for the virtual network"
 }
 
 output "nsg_id" {

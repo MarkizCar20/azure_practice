@@ -1,11 +1,33 @@
 variable "location" {
   description = "Azure region for resource deployment"
   type = string
-  default = "East US"
+  default = "centralus"
 }
 
 variable "resource_group_name" {
   description = "The name of the resource group to be created"
   type = string
   default = "keycloak-project-rg"
+}
+
+variable "client_id" {
+  description = "Client ID of the Service Principal"
+  type = string
+  sensitive = true
+}
+
+variable "client_secret" {
+  description = "Client Secret of the Service Principal"
+  type = string
+  sensitive = true
+}
+
+variable "subscription_id" {
+  description = "Subscription ID for Azure"
+  type = string
+}
+
+variable "tenant_id" {
+  description = "Tenant ID for Azure"
+  type = string
 }
