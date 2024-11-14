@@ -37,3 +37,23 @@ override.tf.json
 terraform.rc
 clientId.json
 terraform-custom-role.json
+
+#Ignore Ansible Vault passwords (if they are stored separately)
+.vault_pass
+
+#Ignore inventory files that may contain IPs or sensitive host information
+*/inventory
+*inventory.ini
+
+#Ignore cache, logs and temporary files
+*.retry  # Ansible retry files generated after failed playbook runs
+*.log
+*.bak  # Backup files
+*.swp  # Temporary swap files
+*.swo  # Temporary swap files
+*.cache/
+
+#Ignore temporary files and IDE configurations
+.DS_Store
+.idea/
+.vscode/
