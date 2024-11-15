@@ -12,7 +12,7 @@ module "network" {
     subnet_name = "keycloak-subnet"
     subnet_prefixes = ["10.0.1.0/24"]
     bastion_prefixes = ["10.0.2.0/27"]
-    bastion_subnet_name = "bastion-subnet"
+    bastion_subnet_name = "AzureBastionSubnet"
     nsg_name = "keycloak-nsg"
 }
 

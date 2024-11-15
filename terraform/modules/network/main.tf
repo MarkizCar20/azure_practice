@@ -22,7 +22,7 @@ resource "azurerm_subnet" "bastion_subnet" {
 resource "azurerm_public_ip" "bastion_public_ip" {
   name = "bastion-public-ip"
   location = var.location
-  resource_group_name = azurerm_resource_group.rg.name
+  resource_group_name = var.resource_group_name
   allocation_method = "Static"
   sku = "Standard" #this is required for Bastion hosts?
 }
