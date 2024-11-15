@@ -12,6 +12,21 @@ resource "azurerm_subnet" "subnet" {
   address_prefixes = var.subnet_prefixes
 }
 
+resource "azurerm_subnet" "bastion_subnet" {
+  name = var.bastion_subnet_name
+  resource_group_name = var.resource_group_name
+  virtual_network_name = azurerm_virtual_network.vnet.name
+  address_prefixes = var.bastion_prefixes
+}
+
+resource "azurerm_public_ip" "bastion_public_ip" {
+  name = "bastion-public-ip"
+  location = var.location
+  resource_group_name = azurerm_resource_group.rg.name
+  allocation_method = "Static"
+  sku = "Standard" #this is required for Bastion hosts?
+}
+
 resource "azurerm_network_security_group" "nsg" {
   name = var.nsg_name
   location = var.location
