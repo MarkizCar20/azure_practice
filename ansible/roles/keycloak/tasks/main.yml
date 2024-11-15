@@ -1,0 +1,43 @@
+---
+- name: Pull PostgreSQL image
+  docker_image:
+    name: postgres
+    source: pull
+
+- name: Start PostgreSQL container
+  docker_container:
+    name: "{{ postgres_container_name }}"
+    image: postgres:latest
+    env:
+      POSTGRES_USER: "{{ postgres_user }}"
+      POSTGRES_PASSWORD: "{{ postgres_password }}"
+      POSTGRES_DB: "{{ postgres_db }}"
+    ports:
+      - "5432:5432"
+    state: started
+    restart_policy: always
+
+- name: Pull Keycloak image
+  docker_image:
+    name: jboss/keycloak
+    tag: latest
+    source: pull
+
+- name: Start Keycloak container with PostgreSQL as database
+  docker_container:
+    name: "{{ keycloak_container_name }}"
+    image: jboss/keycloak:latest
+    env:
+      DB_VENDOR: POSTGRESS
+      DB_ADDR: "{{ ansible_default_ipv4.address }}"
+      DB_DATABASE: "{{ postgres_db }}"
+      DB_USER: "{{ postgres_user }}"
+      DB_PASSWORD: "{{ postgres_password }}"
+      KEYCLOAK_USER: "{{ keycloak_admin_user }}"
+      KEYCLOAK_PASSWORD: "{{ keycloak_admin_password }}"
+    links:
+      - "postgres-db:postgres-db"
+    ports:
+      - "8080:8080"
+    state: started
+    restart_policy: always
