@@ -8,25 +8,36 @@
   apt:
     name: ['apt-transport-https', 'ca-certificates', 'curl', 'software-properties-common']
     state: present
+  become: true
 
-- name: Add Docker GPG key
+- name: Add Docker’s official GPG key
   apt_key:
     url: https://download.docker.com/linux/ubuntu/gpg
     state: present
+  become: true
 
-- name: Add Docker repository
+- name: Add Docker's official repository
   apt_repository:
-    repo: 'deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable'
-    state: present
-    update_cache: yes
+    repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_lsb.codename }} stable"
+  become: true
 
-- name: Install Docker and Docker Compose
+- name: Update apt cache after adding Docker repo
   apt:
-    name: ['docker-ce', 'docker-ce-cli', 'containerd.io', 'docker-compose']
-    state: present
+    update_cache: yes
+  become: true
 
-- name: Ensure Docker service is running
+- name: Install Docker
+  apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+    state: latest
+  become: true
+
+- name: Ensure Docker service is enabled and started
   service:
     name: docker
     state: started
-    enabled: true
+    enabled: yes
+  become: true

@@ -2,12 +2,13 @@
 - name: Pull PostgreSQL image
   docker_image:
     name: postgres
+    tag: 15-alpine  # Use a specific lightweight version
     source: pull
 
 - name: Start PostgreSQL container
   docker_container:
     name: "{{ postgres_container_name }}"
-    image: postgres:latest
+    image: postgres:15-alpine
     env:
       POSTGRES_USER: "{{ postgres_user }}"
       POSTGRES_PASSWORD: "{{ postgres_password }}"
@@ -19,24 +20,27 @@
 
 - name: Pull Keycloak image
   docker_image:
-    name: jboss/keycloak
+    name: quay.io/keycloak/keycloak
     tag: latest
     source: pull
 
 - name: Start Keycloak container with PostgreSQL as database
   docker_container:
     name: "{{ keycloak_container_name }}"
-    image: jboss/keycloak:latest
+    image: quay.io/keycloak/keycloak:latest
     env:
-      DB_VENDOR: POSTGRESS
-      DB_ADDR: "{{ ansible_default_ipv4.address }}"
+      DB_VENDOR: POSTGRES
+      DB_ADDR: "postgres"
       DB_DATABASE: "{{ postgres_db }}"
       DB_USER: "{{ postgres_user }}"
       DB_PASSWORD: "{{ postgres_password }}"
       KEYCLOAK_USER: "{{ keycloak_admin_user }}"
       KEYCLOAK_PASSWORD: "{{ keycloak_admin_password }}"
+      KC_HOSTNAME: "{{ ansible_host }}"
+      KC_HTTP_RELATIVE_PATH: "/auth"
+    command: "start-dev"
     links:
-      - "postgres-db:postgres-db"
+      - "postgres:postgres"
     ports:
       - "8080:8080"
     state: started
@@ -44,24 +48,26 @@
 
 - name: Wait for Keycloak service to be ready
   uri:
-    url: "http://localhost:8080/auth/"
+    url: "http://{{ ansible_host }}:8080/"
     method: GET
-  register: keycloak_status
-  retries: 10
+    status_code: 200
+  retries: 30
   delay: 10
+  register: keycloak_status
   until: keycloak_status.status == 200
 
 - name: Get Admin Access Token
   uri:
     url: "http://localhost:8080/auth/realms/master/protocol/openid-connect/token"
     method: POST
-    body: "grant_type=password&client_id=admin-cli&username=admin&password={{ keycloak_admin_password }}"
+    body: "grant_type=password&client_id=admin-cli&username={{ keycloak_admin_user }}&password={{ keycloak_admin_password }}"
     headers:
       Content-Type: "application/x-www-form-urlencoded"
     return_content: yes
+    status_code: 200
   register: keycloak_token
 
-- name: Configure KeyCloak Realm
+- name: Configure Keycloak Realm
   uri:
     url: "http://localhost:8080/auth/admin/realms"
     method: POST

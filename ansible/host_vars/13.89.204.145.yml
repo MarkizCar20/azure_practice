@@ -5,4 +5,5 @@ postgres_db: keycloak
 postgres_container_name: "{{ lookup('env', 'POSTGRES_CONTAINER_NAME') }}"
 keycloak_admin_user: "{{ lookup('env', 'KEYCLOAK_ADMIN_USER') }}"
 keycloak_admin_password: "{{ lookup('env', 'KEYCLOAK_ADMIN_PASSWORD') }}"
+keycloak_container_name: "{{ lookup('env', 'KEYCLOAK_CONTAINER_NAME') }}"
 web_container_name: webserver
