@@ -28,7 +28,18 @@ variable "subnet_prefixes" {
   description = "Address prefix for the subnet"
 }
 
+
+# variable "bastion_prefixes" {
+#   type = list(string)
+#   description = "Address prefix for bastion"
+# }
+
 variable "nsg_name" {
   type = string
   description = "Name of the network security group"
 }
+
+# variable "bastion_subnet_name" {
+#   type = string
+#   description = "Name of Bastion subnet"
+# }

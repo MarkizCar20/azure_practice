@@ -1,0 +1,6 @@
+---
+- name: Prepare system for container deployments
+  hosts: keycloak_server
+  become: true
+  roles:
+    - common

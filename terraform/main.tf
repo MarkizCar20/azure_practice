@@ -12,6 +12,8 @@ module "network" {
     subnet_name = "keycloak-subnet"
     subnet_prefixes = ["10.0.1.0/24"]
     nsg_name = "keycloak-nsg"
+    # bastion_prefixes = ["10.0.2.0/27"]
+    # bastion_subnet_name = "AzureBastionSubnet"
 }
 
 module "compute" {
@@ -22,4 +24,10 @@ module "compute" {
   vm_size = "Standard_DS1_v2"
   admin_username = "mmijailovic"
   subnet_id = module.network.subnet_id
+  depends_on = [ module.network ]
+  vm_public_ip = module.network.keycloack_vm_public_ip
+  network_security_group_id = module.network.nsg_id
+  # bastion_name = "my-bastion"
+  # bastion_subnet_id = module.network.bastion_subnet_id
+  # bastion_public_ip_id = module.network.bastion_public_ip_id
 }
