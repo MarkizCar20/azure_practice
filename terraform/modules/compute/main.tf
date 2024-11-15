@@ -11,6 +11,11 @@ resource "azurerm_network_interface" "nic" {
   }
 }
 
+resource "azurerm_network_interface_security_group_association" "nic_nsg" {
+  network_interface_id = azurerm_network_interface.nic.id
+  network_security_group_id = var.network_security_group_id
+}
+
 resource "azurerm_linux_virtual_machine" "vm" {
   name = var.vm_name
   resource_group_name = var.resource_group_name

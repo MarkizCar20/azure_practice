@@ -26,6 +26,7 @@ module "compute" {
   subnet_id = module.network.subnet_id
   depends_on = [ module.network ]
   vm_public_ip = module.network.keycloack_vm_public_ip
+  network_security_group_id = module.network.nsg_id
   # bastion_name = "my-bastion"
   # bastion_subnet_id = module.network.bastion_subnet_id
   # bastion_public_ip_id = module.network.bastion_public_ip_id

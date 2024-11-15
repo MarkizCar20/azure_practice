@@ -33,6 +33,9 @@ variable "vm_public_ip" {
   type = string
 }
 
+variable "network_security_group_id" {
+  description = "Network security group id"
+}
 # variable "bastion_name" {
 #   description = "Name of the Azure Bastion Host"
 #   type = string
