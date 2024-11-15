@@ -7,23 +7,36 @@
       docker_image:
         name: nginx
         source: pull
-    
+
+    - name: Create static website directory on host
+      file:
+        path: /var/www/static-site
+        state: directory
+        mode: '0755'
+
+    - name: Copy static website files from project root to host
+      copy:
+        src: "{{ playbook_dir | dirname | dirname }}/static-site/"
+        dest: /var/www/static-site/
+
     - name: Start web server container
       docker_container:
         name: "{{ web_container_name }}"
         image: nginx
         ports:
           - "80:80"
+        volumes:
+          - /var/www/static-site:/usr/share/nginx/html
         state: started
         restart_policy: always
-    
+
     - name: Copy NGINX configuration
       template:
-        src: nginx.conf.j2
+        src: "{{ role_path }}/templates/nginx.conf.j2"
         dest: /etc/nginx/nginx.conf
       notify:
         - Restart NGINX
-  
+
   handlers:
     - name: Restart NGINX
       docker_container:

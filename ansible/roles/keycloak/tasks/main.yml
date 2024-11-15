@@ -41,3 +41,32 @@
       - "8080:8080"
     state: started
     restart_policy: always
+
+- name: Wait for Keycloak service to be ready
+  uri:
+    url: "http://localhost:8080/auth/"
+    method: GET
+  register: keycloak_status
+  retries: 10
+  delay: 10
+  until: keycloak_status.status == 200
+
+- name: Get Admin Access Token
+  uri:
+    url: "http://localhost:8080/auth/realms/master/protocol/openid-connect/token"
+    method: POST
+    body: "grant_type=password&client_id=admin-cli&username=admin&password={{ keycloak_admin_password }}"
+    headers:
+      Content-Type: "application/x-www-form-urlencoded"
+    return_content: yes
+  register: keycloak_token
+
+- name: Configure KeyCloak Realm
+  uri:
+    url: "http://localhost:8080/auth/admin/realms"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ keycloak_token.json.access_token }}"
+      Content-Type: "application/json"
+    body: "{{ lookup('template', 'keycloak_config.j2') }}"
+    status_code: 201
