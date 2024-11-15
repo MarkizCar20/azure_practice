@@ -24,4 +24,10 @@ module "compute" {
   vm_size = "Standard_DS1_v2"
   admin_username = "mmijailovic"
   subnet_id = module.network.subnet_id
+
+  bastion_name = "my-bastion"
+  bastion_subnet_id = module.network.bastion_subnet_id
+  bastion_public_ip_id = module.network.bastion_public_ip_id
+
+  depends_on = [ module.network ]
 }
