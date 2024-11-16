@@ -22,7 +22,7 @@ module "compute" {
   location = var.location
   resource_group_name = azurerm_resource_group.rg.name
   vm_size = "Standard_DS1_v2"
-  admin_username = "mmijailovic"
+  admin_username = "markomijailovic"
   subnet_id = module.network.subnet_id
   depends_on = [ module.network ]
   vm_public_ip = module.network.keycloack_vm_public_ip
