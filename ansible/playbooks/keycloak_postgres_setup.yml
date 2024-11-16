@@ -1,6 +1,0 @@
----
-- name: Set up Keycloak and PostgreSQL
-  hosts: keycloak_server
-  become: true
-  roles:
-    - keycloak

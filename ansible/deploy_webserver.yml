@@ -1,0 +1,28 @@
+- name: Deploy Web Server Container
+  hosts: azure_vm
+  become: yes
+  tasks:
+    - name: Pull Nginx image
+      docker_image:
+        name: nginx:latest
+        source: pull
+
+    - name: Copy web content to VM
+      copy:
+        src: web_content/
+        dest: /home/markomijailovic/web_content/
+        owner: markomijailovic
+        group: markomijailovic
+        mode: '0755'
+
+    - name: Run Nginx container
+      docker_container:
+        name: web_server
+        image: nginx:latest
+        volumes:
+          - /home/azureuser/web_content:/usr/share/nginx/html:ro
+        ports:
+          - "80:80"
+        restart_policy: always
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
