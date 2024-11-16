@@ -1,93 +1,85 @@
 - name: Configure Keycloak
   hosts: azure_vm
+  become: yes
   vars:
-    keycloak_url: "http://localhost:8080/auth"
-    keycloak_user: "admin"
-    keycloak_password: "admin_password"
+    keycloak_url: "http://localhost:8080"
+    auth_realm: "master"
+    auth_username: "admin"
+    auth_password: "admin_password"
     realm_name: "webserver-access"
-    realm_id: "webserver-access"
+    realm_display_name: "Web Server Access Realm"
+    realm_id: "webserver-access-id"
     client_id: "nginx-webserver"
     client_secret: "replace-with-generated-secret"
-    user_username: "john_doe"
-    user_password: "password123"
-    user_email: "john@example.com"
-    user_first_name: "John"
-    user_last_name: "Doe"
-    user_roles:
-      - "web-user"
 
   tasks:
     - name: Create a new realm
       community.general.keycloak_realm:
         auth_keycloak_url: "{{ keycloak_url }}"
-        auth_username: "{{ keycloak_user }}"
-        auth_password: "{{ keycloak_password }}"
-        auth_realm: "master"
-        id: "{{ realm_id }}"
+        auth_realm: "{{ auth_realm }}"
+        auth_username: "{{ auth_username }}"
+        auth_password: "{{ auth_password }}"
         realm: "{{ realm_name }}"
+        id: "{{ realm_id }}"
+        display_name: "{{ realm_display_name }}"
         enabled: true
         state: present
 
     - name: Add a new client
       community.general.keycloak_client:
         auth_keycloak_url: "{{ keycloak_url }}"
-        auth_username: "{{ keycloak_user }}"
-        auth_password: "{{ keycloak_password }}"
-        auth_realm: "master"
+        auth_realm: "{{ auth_realm }}"
+        auth_username: "{{ auth_username }}"
+        auth_password: "{{ auth_password }}"
         realm: "{{ realm_name }}"
         client_id: "{{ client_id }}"
         secret: "{{ client_secret }}"
         standard_flow_enabled: true
-        direct_access_grants_enabled: false
-        implicit_flow_enabled: false
-        service_accounts_enabled: false
-        public_client: false  # Corresponds to "confidential" access type
         redirect_uris:
-          - "http://52.165.45.10//*"
-          - "https://52.165.45.10//*"
+          - "http://52.165.45.10/*" 
         web_origins:
           - "*"
+        public_client: false
         state: present
 
     - name: Create roles
       community.general.keycloak_role:
         auth_keycloak_url: "{{ keycloak_url }}"
-        auth_username: "{{ keycloak_user }}"
-        auth_password: "{{ keycloak_password }}"
-        auth_realm: "master"
+        auth_realm: "{{ auth_realm }}"
+        auth_username: "{{ auth_username }}"
+        auth_password: "{{ auth_password }}"
         realm: "{{ realm_name }}"
         name: "{{ item }}"
         client_id: "{{ client_id }}"
         state: present
       loop:
-        - "web-user"
-        - "admin"
+        - web-user
+        - admin
 
     - name: Add a user
       community.general.keycloak_user:
         auth_keycloak_url: "{{ keycloak_url }}"
-        auth_username: "{{ keycloak_user }}"
-        auth_password: "{{ keycloak_password }}"
-        auth_realm: "master"
+        auth_realm: "{{ auth_realm }}"
+        auth_username: "{{ auth_username }}"
+        auth_password: "{{ auth_password }}"
         realm: "{{ realm_name }}"
-        username: "{{ user_username }}"
-        password: "{{ user_password }}"
+        username: "john_doe"
+        password: "password123"
         enabled: true
-        email: "{{ user_email }}"
-        first_name: "{{ user_first_name }}"
-        last_name: "{{ user_last_name }}"
+        email: "john@example.com"
+        first_name: "John"
+        last_name: "Doe"
         state: present
 
     - name: Assign roles to the user
       community.general.keycloak_client_rolemapping:
         auth_keycloak_url: "{{ keycloak_url }}"
-        auth_username: "{{ keycloak_user }}"
-        auth_password: "{{ keycloak_password }}"
-        auth_realm: "master"
+        auth_realm: "{{ auth_realm }}"
+        auth_username: "{{ auth_username }}"
+        auth_password: "{{ auth_password }}"
         realm: "{{ realm_name }}"
         client_id: "{{ client_id }}"
-        user: "{{ user_username }}"
+        user: "john_doe"
         roles:
-          - name: "{{ item }}"
+          - name: "web-user"
         state: present
-      loop: "{{ user_roles }}"

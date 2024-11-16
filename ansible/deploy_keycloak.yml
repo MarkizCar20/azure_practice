@@ -2,68 +2,38 @@
   hosts: azure_vm
   become: yes
   vars:
-    keycloak_image: quay.io/keycloak/keycloak:15.0.2
-    ssl_host_directory: /opt/keycloak/ssl
-    ssl_container_directory: /opt/jboss/keycloak/ssl
+    keycloak_image: quay.io/keycloak/keycloak:latest
     keycloak_ports:
       - "8080:8080"
       - "8443:8443"
-    keycloak_healthcheck_url: "http://localhost:8080"
+    postgres_ip: "172.17.0.1"  # Update this to the actual IP of your PostgreSQL container or service if it's different
+    keycloak_db_name: "keycloak_db"
+    keycloak_db_user: "keycloak"
+    keycloak_db_password: "keycloak_password"
+    keycloak_admin_user: "admin"
+    keycloak_admin_password: "admin_password"
+
   tasks:
-    # Pull the Keycloak Docker image
+    # Pull the latest Keycloak Docker image
     - name: Pull Keycloak image
       docker_image:
         name: "{{ keycloak_image }}"
         source: pull
 
-    # Ensure directory for SSL certificates exists on the host
-    - name: Ensure directory for SSL certificates exists on the host
-      ansible.builtin.file:
-        path: "{{ ssl_host_directory }}"
-        state: directory
-        mode: '0755'
-
-    # Copy SSL certificate to the host
-    - name: Copy SSL certificate to the host
-      ansible.builtin.copy:
-        src: keycloak.crt
-        dest: "{{ ssl_host_directory }}/application.crt"
-        mode: '0644'
-
-    # Copy SSL key to the host
-    - name: Copy SSL key to the host
-      ansible.builtin.copy:
-        src: keycloak.key
-        dest: "{{ ssl_host_directory }}/application.key"
-        mode: '0600'
-
-    # Set proper ownership and permissions for SSL directory
-    - name: Ensure correct ownership and permissions for SSL directory
-      ansible.builtin.command:
-        cmd: chown -R 1000:1000 "{{ ssl_host_directory }}"
-      become: yes
-
-    - name: Set correct permissions for SSL files
-      ansible.builtin.command:
-        cmd: chmod -R 750 "{{ ssl_host_directory }}"
-      become: yes
-
-    # Run the Keycloak container with SSL volume
-    - name: Run Keycloak container with SSL volume
+    # Run the Keycloak container with the updated startup command
+    - name: Run Keycloak container
       docker_container:
         name: keycloak_server
         image: "{{ keycloak_image }}"
+        command: "start-dev --http-enabled=true --http-port=8080 --hostname-strict=false"
         env:
-          DB_VENDOR: POSTGRES
-          DB_ADDR: 172.17.0.1
-          DB_DATABASE: keycloak_db
-          DB_USER: keycloak
-          DB_PASSWORD: keycloak_password
-          KEYCLOAK_USER: admin
-          KEYCLOAK_PASSWORD: admin_password
+          KC_DB: postgres
+          KC_DB_URL: "jdbc:postgresql://{{ postgres_ip }}/{{ keycloak_db_name }}"
+          KC_DB_USERNAME: "{{ keycloak_db_user }}"
+          KC_DB_PASSWORD: "{{ keycloak_db_password }}"
+          KC_ADMIN: "{{ keycloak_admin_user }}"
+          KC_ADMIN_PASSWORD: "{{ keycloak_admin_password }}"
         ports: "{{ keycloak_ports }}"
-        volumes:
-          - "{{ ssl_host_directory }}:{{ ssl_container_directory }}"
         restart_policy: always
 
     # Wait for the Keycloak container to be ready
@@ -74,48 +44,3 @@
         delay: 10
         timeout: 120
         state: started
-
-    - name: Check if SSLRealm exists
-      community.docker.docker_container_exec:
-        container: keycloak_server
-        command: |
-          /opt/jboss/keycloak/bin/jboss-cli.sh --connect --commands="/core-service=management/security-realm=SSLRealm:read-resource()"
-      register: ssl_realm_check
-      failed_when: false
-
-    - name: Add SSLRealm if not exists
-      community.docker.docker_container_exec:
-        container: keycloak_server
-        command: |
-          /opt/jboss/keycloak/bin/jboss-cli.sh --connect --commands="/core-service=management/security-realm=SSLRealm:add()"
-      when: ssl_realm_check.stdout is search("WFLYCTL0216")  # Check for "resource does not exist" error
-
-    - name: Check if SSL identity exists
-      community.docker.docker_container_exec:
-        container: keycloak_server
-        command: |
-          /opt/jboss/keycloak/bin/jboss-cli.sh --connect --commands="/core-service=management/security-realm=SSLRealm/server-identity=ssl:read-resource()"
-      register: ssl_identity_check
-      failed_when: false
-
-    - name: Add SSL identity if not exists
-      community.docker.docker_container_exec:
-        container: keycloak_server
-        command: |
-          /opt/jboss/keycloak/bin/jboss-cli.sh --connect --commands="/core-service=management/security-realm=SSLRealm/server-identity=ssl:add(keystore-path=application.keystore, keystore-password=secret)"
-      when: ssl_identity_check.stdout is search("WFLYCTL0216")  # Check for "resource does not exist" error
-
-    - name: Check if HTTPS listener exists
-      community.docker.docker_container_exec:
-        container: keycloak_server
-        command: |
-          /opt/jboss/keycloak/bin/jboss-cli.sh --connect --commands="/subsystem=undertow/server=default-server/https-listener=https:read-resource()"
-      register: https_listener_check
-      failed_when: false
-
-    - name: Add HTTPS listener if not exists
-      community.docker.docker_container_exec:
-        container: keycloak_server
-        command: |
-          /opt/jboss/keycloak/bin/jboss-cli.sh --connect --commands="/subsystem=undertow/server=default-server/https-listener=https:add(socket-binding=https, security-realm=SSLRealm)"
-      when: https_listener_check.stdout is search("WFLYCTL0216")  # Check for "resource does not exist" error
