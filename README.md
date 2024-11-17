@@ -73,12 +73,8 @@ This project involves the creation of a containerized Keycloak environment on an
 - **CI/CD final touch for setup:** CD currently doesn't working without a preexisting tfstate. Need to update that to work automatically
 - **Docker Compose:** Need to reconfigure to use Docker Compose for better handling of all the containers
 - **Use of Load Balancer:** Need to add Load Balancer to infrastructure for better security handling
-
-## **Future Enhancements**
-- **High Availability:** Use an Azure Load Balancer for redundancy.
 - **Monitoring:** Integrate Azure Monitor or Prometheus for real-time health checks.
 - **Auto-scaling:** Configure automatic scaling based on load.
-- **SSL/TLS:** Implement HTTPS for secure communication.
 
 ---
 
