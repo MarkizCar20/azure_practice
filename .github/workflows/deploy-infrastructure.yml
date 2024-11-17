@@ -57,6 +57,7 @@ jobs:
     - name: Create Private Key File
       id: create-private-key
       run: |
+        mkdir -p ~/.ssh
         echo "${{ secrets.SSH_PRIVATE_KEY }}" >> ~/.ssh/id_rsa
         chmod 600 ~/.ssh/id_rsa
 
