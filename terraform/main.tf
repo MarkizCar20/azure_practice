@@ -1,7 +1,7 @@
-# resource "azurerm_resource_group" "rg" {
-#   name = "keycloak-project-rg"
-#   location = var.location
-# } already created for project purposes
+resource "azurerm_resource_group" "rg" {
+  name = "keycloak-project-rg"
+  location = var.location
+}
 
 module "network" {
     source = "./modules/network"
