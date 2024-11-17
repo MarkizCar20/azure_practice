@@ -46,7 +46,7 @@ resource "azurerm_network_security_rule" "allow_http" {
   direction = "Inbound"
   access = "Allow"
   protocol = "Tcp"
-  destination_port_range = "80"
+  destination_port_ranges = [ "80", "8080", "8443"]
   source_address_prefix = "*"
   destination_address_prefix = "*"
   source_port_range = "*"
@@ -54,9 +54,23 @@ resource "azurerm_network_security_rule" "allow_http" {
   resource_group_name = var.resource_group_name
 }
 
+# resource "azurerm_network_security_rule" "allow_keycloak_port" {
+#   name = "allowKeyCloakPort"
+#   priority = 200
+#   direction = "Inbound"
+#   access = "Allow"
+#   protocol = "Tcp"
+#   source_address_prefix = "*"
+#   destination_address_prefix = "*"
+#   source_port_range = "*"
+#   network_security_group_name = azurerm_network_security_group.nsg.name
+#   resource_group_name = var.resource_group_name
+#   destination_port_ranges = [ "8080", "8443"]
+# }
+
 resource "azurerm_network_security_rule" "allow_ssh" {
   name = "allowSSH"
-  priority = 1000
+  priority = 300
   direction = "Inbound"
   access = "Allow"
   protocol = "Tcp"

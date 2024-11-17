@@ -1,0 +1,83 @@
+- name: Deploy NGINX Container
+  hosts: azure_vm
+  become: yes
+  vars:
+    nginx_image: nginx:latest
+    nginx_ports:
+      - "80:80"
+      - "443:443"
+    nginx_host_config_directory: /opt/nginx
+    nginx_container_config_file: /etc/nginx/nginx.conf
+    nginx_host_ssl_directory: /opt/nginx/ssl
+    nginx_container_ssl_directory: /etc/nginx/ssl
+    ssl_certificate_file: keycloak.crt
+    ssl_certificate_key_file: keycloak.key
+    keycloak_server_name: 40.77.61.215  # Replace with Keycloak's public IP or hostname
+    keycloak_discovery_url: "https://40.77.61.215/realms/webserver-access/.well-known/openid-configuration"
+    client_id: nginx-webserver
+    client_secret: replace-with-generated-secret
+    backend_url: http://localhost:8080  # Replace with backend service URL
+  tasks:
+    # Ensure directories exist on the host
+    - name: Ensure directory for NGINX configuration exists
+      ansible.builtin.file:
+        path: "{{ nginx_host_config_directory }}"
+        state: directory
+        owner: 1000
+        group: 1000
+        mode: '0755'
+
+    - name: Ensure directory for SSL certificates exists on the host for NGINX
+      ansible.builtin.file:
+        path: "{{ nginx_host_ssl_directory }}"
+        state: directory
+        owner: 1000
+        group: 1000
+        mode: '0755'
+
+    # Copy SSL certificate to the host for NGINX
+    - name: Copy the SSL certificate to the host for NGINX
+      ansible.builtin.copy:
+        src: ./{{ ssl_certificate_file }}
+        dest: "{{ nginx_host_ssl_directory }}/{{ ssl_certificate_file }}"
+        owner: 1000
+        group: 1000
+        mode: '0644'
+
+    # Copy SSL key to the host for NGINX
+    - name: Copy the SSL key to the host for NGINX
+      ansible.builtin.copy:
+        src: ./{{ ssl_certificate_key_file }}
+        dest: "{{ nginx_host_ssl_directory }}/{{ ssl_certificate_key_file }}"
+        owner: 1000
+        group: 1000
+        mode: '0600'
+
+    # Generate NGINX configuration file
+    - name: Configure NGINX for Keycloak
+      ansible.builtin.template:
+        src: ./nginx.conf.j2
+        dest: "{{ nginx_host_config_directory }}/nginx.conf"
+        owner: 1000
+        group: 1000
+        mode: '0644'
+
+    # Run the NGINX container
+    - name: Run NGINX container
+      docker_container:
+        name: nginx_server
+        image: "{{ nginx_image }}"
+        ports: "{{ nginx_ports }}"
+        volumes:
+          - "{{ nginx_host_config_directory }}/nginx.conf:{{ nginx_container_config_file }}"
+          - "{{ nginx_host_ssl_directory }}:{{ nginx_container_ssl_directory }}"
+        restart_policy: always
+
+    # Wait for NGINX to start
+    - name: Wait for NGINX to start
+      wait_for:
+        host: localhost
+        port: 80
+        delay: 5
+        timeout: 60
+        state: started

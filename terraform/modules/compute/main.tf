@@ -25,7 +25,7 @@ resource "azurerm_linux_virtual_machine" "vm" {
   network_interface_ids = [azurerm_network_interface.nic.id]
   admin_ssh_key {
     username = var.admin_username
-    public_key = file("~/.ssh/id_rsa.pub")
+    public_key = file("/Users/markomijailovic/.ssh/id_rsa.pub")
   }
 
   os_disk {
@@ -35,9 +35,9 @@ resource "azurerm_linux_virtual_machine" "vm" {
 
   source_image_reference {
     publisher = "Canonical"
-    offer = "UbuntuServer"
-    sku = "18.04-LTS"
-    version = "latest"
+    offer     = "0001-com-ubuntu-server-jammy"
+    sku       = "22_04-lts"
+    version   = "latest"
   }
 }
 
