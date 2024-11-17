@@ -6,41 +6,70 @@
     keycloak_ports:
       - "8080:8080"
       - "8443:8443"
-    postgres_ip: "172.17.0.1"  # Update this to the actual IP of your PostgreSQL container or service if it's different
-    keycloak_db_name: "keycloak_db"
-    keycloak_db_user: "keycloak"
-    keycloak_db_password: "keycloak_password"
-    keycloak_admin_user: "admin"
-    keycloak_admin_password: "admin_password"
-
+    keycloak_ssl_host_directory: /opt/keycloak/ssl
+    keycloak_ssl_container_directory: /opt/keycloak/ssl
+    keycloak_cert_file: keycloak.crt
+    keycloak_key_file: keycloak.key
+    keycloak_keystore_password: secret
+    postgres_ip: 172.17.0.1
+    keycloak_db_name: keycloak_db
+    keycloak_db_user: keycloak
+    keycloak_db_password: keycloak_password
+    keycloak_admin_user: admin
+    keycloak_admin_password: Admin_password12!
   tasks:
-    # Pull the latest Keycloak Docker image
-    - name: Pull Keycloak image
-      docker_image:
-        name: "{{ keycloak_image }}"
-        source: pull
+    # Ensure SSL directory exists on the host
+    - name: Ensure directory for SSL keystore exists on the host
+      ansible.builtin.file:
+        path: "{{ keycloak_ssl_host_directory }}"
+        state: directory
+        owner: 1000
+        group: 1000
+        mode: '0755'
 
-    # Run the Keycloak container with the updated startup command
+    # Copy SSL certificate to the host
+    - name: Copy the Keycloak SSL certificate to the host
+      ansible.builtin.copy:
+        src: ./{{ keycloak_cert_file }}
+        dest: "{{ keycloak_ssl_host_directory }}/{{ keycloak_cert_file }}"
+        owner: 1000
+        group: 1000
+        mode: '0644'
+
+    # Copy SSL key to the host
+    - name: Copy the Keycloak SSL key to the host
+      ansible.builtin.copy:
+        src: ./{{ keycloak_key_file }}
+        dest: "{{ keycloak_ssl_host_directory }}/{{ keycloak_key_file }}"
+        owner: 1000
+        group: 1000
+        mode: '0600'
+
+    # Run the Keycloak container
     - name: Run Keycloak container
       docker_container:
         name: keycloak_server
         image: "{{ keycloak_image }}"
-        command: "start-dev --http-enabled=true --http-port=8080 --hostname-strict=false"
+        command: "start --https-port=8443 --http-port=8080 --hostname-strict=false --verbose"
         env:
           KC_DB: postgres
           KC_DB_URL: "jdbc:postgresql://{{ postgres_ip }}/{{ keycloak_db_name }}"
           KC_DB_USERNAME: "{{ keycloak_db_user }}"
           KC_DB_PASSWORD: "{{ keycloak_db_password }}"
-          KC_ADMIN: "{{ keycloak_admin_user }}"
-          KC_ADMIN_PASSWORD: "{{ keycloak_admin_password }}"
+          KC_HTTPS_CERTIFICATE_FILE: "{{ keycloak_ssl_container_directory }}/{{ keycloak_cert_file }}"
+          KC_HTTPS_CERTIFICATE_KEY_FILE: "{{ keycloak_ssl_container_directory }}/{{ keycloak_key_file }}"
+          KEYCLOAK_ADMIN: "{{ keycloak_admin_user }}"
+          KEYCLOAK_ADMIN_PASSWORD: "{{ keycloak_admin_password }}"
         ports: "{{ keycloak_ports }}"
+        volumes:
+          - "{{ keycloak_ssl_host_directory }}:{{ keycloak_ssl_container_directory }}"
         restart_policy: always
 
-    # Wait for the Keycloak container to be ready
+    # Wait for Keycloak to start
     - name: Wait for Keycloak to start
       wait_for:
         host: localhost
-        port: 8080
+        port: 8443
         delay: 10
         timeout: 120
         state: started

@@ -2,10 +2,10 @@
   hosts: azure_vm
   become: yes
   vars:
-    keycloak_url: "http://localhost:8080"
+    keycloak_url: "https://localhost:8443"
     auth_realm: "master"
     auth_username: "admin"
-    auth_password: "admin_password"
+    auth_password: "Admin_password12!"
     realm_name: "webserver-access"
     realm_display_name: "Web Server Access Realm"
     realm_id: "webserver-access-id"
@@ -24,6 +24,7 @@
         display_name: "{{ realm_display_name }}"
         enabled: true
         state: present
+        validate_certs: false
 
     - name: Add a new client
       community.general.keycloak_client:
@@ -36,11 +37,12 @@
         secret: "{{ client_secret }}"
         standard_flow_enabled: true
         redirect_uris:
-          - "http://52.165.45.10/*" 
+          - "https://40.77.61.215/*" 
         web_origins:
           - "*"
         public_client: false
         state: present
+        validate_certs: false
 
     - name: Create roles
       community.general.keycloak_role:
@@ -52,6 +54,7 @@
         name: "{{ item }}"
         client_id: "{{ client_id }}"
         state: present
+        validate_certs: false
       loop:
         - web-user
         - admin
@@ -64,22 +67,28 @@
         auth_password: "{{ auth_password }}"
         realm: "{{ realm_name }}"
         username: "john_doe"
-        password: "password123"
         enabled: true
         email: "john@example.com"
         first_name: "John"
         last_name: "Doe"
+        credentials:
+          - type: password
+            value: password
+            temporary: false
         state: present
+        validate_certs: false
 
     - name: Assign roles to the user
-      community.general.keycloak_client_rolemapping:
+      community.general.keycloak_user_rolemapping:
         auth_keycloak_url: "{{ keycloak_url }}"
         auth_realm: "{{ auth_realm }}"
         auth_username: "{{ auth_username }}"
         auth_password: "{{ auth_password }}"
         realm: "{{ realm_name }}"
+        target_username: "john_doe"
         client_id: "{{ client_id }}"
-        user: "john_doe"
         roles:
           - name: "web-user"
         state: present
+        validate_certs: false
+
