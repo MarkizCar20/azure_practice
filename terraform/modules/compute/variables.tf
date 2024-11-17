@@ -36,6 +36,11 @@ variable "vm_public_ip" {
 variable "network_security_group_id" {
   description = "Network security group id"
 }
+
+variable "ssh_public_key" {
+  description = "Public key for SSH access"
+  type = string
+}
 # variable "bastion_name" {
 #   description = "Name of the Azure Bastion Host"
 #   type = string

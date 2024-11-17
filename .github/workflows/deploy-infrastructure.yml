@@ -30,6 +30,7 @@ jobs:
         ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
         ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
         ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+        TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
       run: terraform plan -out=plan.tfplan -var="client_id=${{ secrets.AZURE_CLIENT_ID }}" -var="client_secret=${{ secrets.AZURE_CLIENT_SECRET }}" -var="subscription_id=${{ secrets.AZURE_SUBSCRIPTION_ID }}" -var="tenant_id=${{ secrets.AZURE_TENANT_ID }}" -var="location=${{ secrets.AZURE_LOCATION }}" -var="resource_group_name=${{ secrets.AZURE_RESOURCE_GROUP }}"
 
     - name: Apply Terraform
@@ -39,4 +40,33 @@ jobs:
         ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
         ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
         ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+        TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
       run: terraform apply -auto-approve plan.tfplan
+
+    - name: Export VM public IP
+      id: export-ip
+      run: |
+        IP=$(terraform output -raw vm_public_ip)
+        echo "VM_PUBLIC_IP=${IP}" >> GITHUB_ENV
+
+    - name: Install Ansible
+      run: sudo apt-get update && sudo apt-get install -y ansible
+    
+    - name: Create Private Key File
+      id: create-private-key
+      run: |
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" >> ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+
+    - name: Configure Inventory
+      run: |
+        echo "[azure_vm]" > ansible/inventory.ini
+        echo "${{ env.VM_PUBLIC_IP }} ansible_user=markomijailovic ansible_ssh_private_key_file=~/.ssh/id_rsa" >> inventory.ini
+
+    - name: Run Ansible Playbooks
+      working-directory: ./ansible
+      run: |
+        ansible-playbook -i inventory.ini configure_docker.yml
+        ansible-playbook -i inventory.ini deploy_postgres.yml
+        ansible-playbook -i inventory.ini deploy_keycloak.yml
+        ansible-playbook -i inventory.ini deploy_webserver.yml
