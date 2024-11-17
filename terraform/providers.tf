@@ -1,6 +1,6 @@
 terraform {
   backend "azurerm" {
-    resource_group_name = var.resource_group_name
+    resource_group_name = "keycloak-project-rg"
     storage_account_name = "terraformstatekcpractice"
     container_name = "tfstate"
     key = "terraform.tfstate"
